@@ -4,8 +4,8 @@ android {
 
     signingConfigs {
         release {
-            storeFile file('demo.jks')
-            keyAlias 'demo'
+            storeFile file('demo2.jks')
+            keyAlias 'demo2'
             keyPassword '123456'
             storePassword '123456'
             v1SigningEnabled true

@@ -1,4 +1,4 @@
-#Mon Jun 15 18:43:24 EET 2020
+#Tue Jun 16 15:05:12 EET 2020
 base.0=C\:\\Users\\y00548768\\AndroidStudioProjects\\SuperDemo\\app\\build\\intermediates\\dex\\debug\\mergeDexDebug\\out\\classes.dex
 path.0=classes.dex
 renamed.0=classes.dex

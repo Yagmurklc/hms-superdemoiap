@@ -28,6 +28,7 @@ import com.huawei.hms.iap.entity.PurchaseIntentReq;
 import com.huawei.hms.iap.entity.PurchaseIntentResult;
 import com.huawei.hms.iap.entity.PurchaseResultInfo;
 import com.huawei.hms.support.api.client.Status;
+import com.superdemo.iap.huawei.common.Constant;
 import com.superdemo.iap.huawei.util.SecurityUtil;
 
 import org.json.JSONException;
@@ -53,71 +54,64 @@ public class MainActivity extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         final String TAG = "onActivityResult";
         super.onActivityResult(requestCode, resultCode, data);
+        if (data == null){
+            return;
+        }
 
-        if (data != null) {
-            PurchaseResultInfo purchaseResultInfo = Iap.getIapClient(this).parsePurchaseResultInfoFromIntent(data);
-            if (purchaseResultInfo == null) {
-                Log.e(TAG, "purchaseResultInfo can't be null");
-                return;
-            }
+        PurchaseResultInfo purchaseResultInfo = Iap.getIapClient(this).parsePurchaseResultInfoFromIntent(data);
+        if (purchaseResultInfo == null) {
+            Log.e(TAG, "purchaseResultInfo can't be null");
+            return;
+        }
 
-            if (requestCode == 1111) {
-                if (purchaseResultInfo.getReturnCode() == OrderStatusCode.ORDER_PRODUCT_OWNED) {
-                    msg.setText(purchaseResultInfo.getReturnCode());
-                    deliverConsumablePurchases();
-                    return;
-                }
-                else if (purchaseResultInfo.getReturnCode() != OrderStatusCode.ORDER_STATE_SUCCESS) {
-                    msg.setText(purchaseResultInfo.getErrMsg());
-                    Log.e(TAG, "onActivityResult: " + purchaseResultInfo.getErrMsg());
-                    String inAppPurchaseDataSignature = purchaseResultInfo.getInAppDataSignature();
-                    String inAppPurchaseData = purchaseResultInfo.getInAppPurchaseData();
-                    if ((inAppPurchaseData == null) || (inAppPurchaseDataSignature == null)) {
-                        Log.e(TAG, "inAppPurchaseData or inAppPurchaseDataSignature can't be null");
-                        return;
-                    }
+        if (requestCode == Constant.REQ_CODE_BUY_CONSUMABLE) {
+            if (purchaseResultInfo.getReturnCode() == OrderStatusCode.ORDER_STATE_SUCCESS) {
+                String inAppPurchaseDataSignature = purchaseResultInfo.getInAppDataSignature();
+                String inAppPurchaseData = purchaseResultInfo.getInAppPurchaseData();
 
-                    deliverProduct(inAppPurchaseData, inAppPurchaseDataSignature);
-
-                }
-                else  {
-                    msg.setText(purchaseResultInfo.getErrMsg());
-                }
-
-
-            } else if(requestCode == 2222){
-                if(purchaseResultInfo.getReturnCode() == OrderStatusCode.ORDER_STATE_SUCCESS){
-                    msg.setText(purchaseResultInfo.getErrMsg());
-                    String inAppPurchaseDataSignature = purchaseResultInfo.getInAppDataSignature();
-                    String inAppPurchaseData = purchaseResultInfo.getInAppPurchaseData();
-
-                    if ((inAppPurchaseData == null) || (inAppPurchaseDataSignature == null)) {
-                        Log.e(TAG, "inAppPurchaseData or inAppPurchaseDataSignature can't be null");
-                        return;
-                    }
-
-                    deliverConsumablePurchases();
+                if ((inAppPurchaseData == null) || (inAppPurchaseDataSignature == null)) {
+                    Log.e(TAG, "inAppPurchaseData or inAppPurchaseDataSignature can't be null");
                     return;
                 }
 
                 msg.setText(purchaseResultInfo.getErrMsg());
+                Log.e(TAG, "onActivityResult: " + purchaseResultInfo.getErrMsg());
+                deliverProduct(inAppPurchaseData, inAppPurchaseDataSignature);
 
-            }else if(requestCode == 3333){
-
-                 if(purchaseResultInfo.getReturnCode() == OrderStatusCode.ORDER_STATE_SUCCESS) {
-                     String inAppPurchaseDataSignature = purchaseResultInfo.getInAppDataSignature();
-                     String inAppPurchaseData = purchaseResultInfo.getInAppPurchaseData();
-                     deliverProduct(inAppPurchaseData, inAppPurchaseDataSignature);
-                     msg.setText(purchaseResultInfo.getErrMsg());
-                     return;
-                 }
-
-                    msg.setText(purchaseResultInfo.getErrMsg());
-                }
             }
+            else  { msg.setText(purchaseResultInfo.getErrMsg()); }
+
+
+        } else if(requestCode == Constant.REQ_CODE_BUY_NON_CONSUMABLE){
+            if(purchaseResultInfo.getReturnCode() == OrderStatusCode.ORDER_STATE_SUCCESS){
+                String inAppPurchaseDataSignature = purchaseResultInfo.getInAppDataSignature();
+                String inAppPurchaseData = purchaseResultInfo.getInAppPurchaseData();
+                if ((inAppPurchaseData == null) || (inAppPurchaseDataSignature == null)) {
+                    Log.e(TAG, "inAppPurchaseData or inAppPurchaseDataSignature can't be null");
+                    return;
+                }
+                msg.setText(purchaseResultInfo.getErrMsg());
+                deliverConsumablePurchases();
+                return;
+            }
+
+            msg.setText(purchaseResultInfo.getErrMsg());
+
+        }else if(requestCode == Constant.REQ_CODE_BUY_SUPSCRIPTION){
+            if(purchaseResultInfo.getReturnCode() == OrderStatusCode.ORDER_STATE_SUCCESS) {
+                String inAppPurchaseDataSignature = purchaseResultInfo.getInAppDataSignature();
+                String inAppPurchaseData = purchaseResultInfo.getInAppPurchaseData();
+                deliverProduct(inAppPurchaseData, inAppPurchaseDataSignature);
+                msg.setText(purchaseResultInfo.getErrMsg());
+                return;
+            }
+
+            msg.setText(purchaseResultInfo.getErrMsg());
         }
 
-        private void isEnvReadyResult(){
+    }
+
+    private void isEnvReadyResult(){
         Task<IsEnvReadyResult> task = Iap.getIapClient(MainActivity.this).isEnvReady();
         task.addOnSuccessListener(new OnSuccessListener<IsEnvReadyResult>() {
             @Override
@@ -212,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public  void  purchaseStar(View v) throws Exception{
+    public  void  purchaseConsumable(View v) throws Exception{
         String tag = "purchaseStar";
 
         msg.setText(" ");
@@ -229,7 +223,7 @@ public class MainActivity extends AppCompatActivity {
                 Status status = result.getStatus();
                 try {
                     if(status.hasResolution()) {
-                        status.startResolutionForResult(MainActivity.this, 1111);
+                        status.startResolutionForResult(MainActivity.this, Constant.REQ_CODE_BUY_CONSUMABLE);
                         Log.i(tag, "status :" + status.getStatusMessage());
                         msg.setText(status.getStatusMessage());
 
@@ -254,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public  void  purchaseGameLevel(View v) throws Exception{
+    public  void  purchaseNonConsumable(View v) throws Exception{
         String tag = "purchaseStar";
 
         isEnvReadyResult();
@@ -271,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
                 Status status = result.getStatus();
                 try {
                     if(status.hasResolution()) {
-                        status.startResolutionForResult(MainActivity.this, 2222);
+                        status.startResolutionForResult(MainActivity.this, Constant.REQ_CODE_BUY_NON_CONSUMABLE);
                         Log.i(tag, "status :" + status.getStatusMessage());
 
 
@@ -313,7 +307,7 @@ public class MainActivity extends AppCompatActivity {
                 Status status = result.getStatus();
                 try {
                     if(status.hasResolution()) {
-                        status.startResolutionForResult(MainActivity.this, 3333);
+                        status.startResolutionForResult(MainActivity.this, Constant.REQ_CODE_BUY_SUPSCRIPTION);
                         Log.i(tag, "status :" + status.getStatusMessage());
 
                     }
