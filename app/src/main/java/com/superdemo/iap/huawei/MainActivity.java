@@ -290,48 +290,36 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public  void  subscribe (View v) throws Exception{
+    public  void  subscribe (View v) {
         String tag = "purchaseStar";
-
         isEnvReadyResult();
         PurchaseIntentReq request =  new PurchaseIntentReq();
         request.setPriceType(IapClient.PriceType.IN_APP_SUBSCRIPTION);
-        request.setProductId("subscribe");
+        request.setProductId("subscribe001");
 
         Task<PurchaseIntentResult> task = Iap.getIapClient(MainActivity.this).createPurchaseIntent(request);
+        task.addOnSuccessListener(result -> {
 
-        task.addOnSuccessListener(new OnSuccessListener<PurchaseIntentResult>() {
+            Status status = result.getStatus();
+            try {
+                if(status.hasResolution()) {
+                    status.startResolutionForResult(MainActivity.this, Constant.REQ_CODE_BUY_SUPSCRIPTION);
+                    Log.i(tag, "status :" + status.getStatusMessage());
 
-            @Override
-            public void onSuccess(PurchaseIntentResult result) {
-                Status status = result.getStatus();
-                try {
-                    if(status.hasResolution()) {
-                        status.startResolutionForResult(MainActivity.this, Constant.REQ_CODE_BUY_SUPSCRIPTION);
-                        Log.i(tag, "status :" + status.getStatusMessage());
-
-                    }
-                }
-                catch (IntentSender.SendIntentException e) {
-                    Log.e(tag, e.getMessage() );
                 }
             }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(Exception e) {
-                if (e instanceof IapApiException) {
-                    IapApiException apiException = (IapApiException)e;
-                    Status status = apiException.getStatus();
-                    int returnCode = apiException.getStatusCode();
-                    Log.e(tag, "status" + status + "error code " + returnCode);
-                }
-                Log.e(tag, "onFailure: "+ e.getMessage() );
+            catch (IntentSender.SendIntentException e) {
+                Log.e(tag, e.getMessage() );
             }
+        }).addOnFailureListener(e -> {
+            if (e instanceof IapApiException) {
+                IapApiException apiException = (IapApiException)e;
+                Status status = apiException.getStatus();
+                int returnCode = apiException.getStatusCode();
+                Log.e(tag, "status" + status + "error code " + returnCode);
+            }
+            Log.e(tag, "onFailure: "+ e.getMessage() );
         });
-
-
-
-
     }
 
     private void deliverProduct(final String inAppPurchaseData, final String inAppPurchaseDataSignature) {
